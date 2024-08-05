@@ -1,0 +1,4 @@
+currently it takes this long (timed with the linux "time" command) to calculate the first 14 highly composite numbers. i wonder if i could make it quicker.
+
+real	0m2.733s
+user	0m2.663s
