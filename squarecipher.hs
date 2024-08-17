@@ -36,28 +36,28 @@ interpretKey str
       where ltrsqr = chunksOf 5 $ map toUpper str 
 
 -- Lookup letter in LetterSquare from coords
-coordsToLetter :: Coords -> LetterSquare -> Char
-coordsToLetter (Coords x y) ltrsqr = ltrsqr !! x !! y
+coordsToLetter :: LetterSquare -> Coords -> Char
+coordsToLetter ltrsqr (Coords x y) = ltrsqr !! x !! y
 
 -- Get coords of a letter in a LetterSquare
-letterToCoords :: Char -> LetterSquare -> Coords
-letterToCoords c ltrsqr = Coords row column
+letterToCoords :: LetterSquare -> Char -> Coords
+letterToCoords ltrsqr c = Coords row column
                    where Just row = findIndex (elem c) ltrsqr
                          Just column = findIndex (== c) $ ltrsqr !! row  
 
 -- encode two letters (a digraph) A and B to make the
 -- new digraph of: A+B and A-B
-encodeDigraph :: (Char, Char) -> LetterSquare -> (Char, Char)
-encodeDigraph (a, b) ltrsqr = (coordsToLetter (aCoords +$ bCoords) ltrsqr, coordsToLetter (aCoords -$ bCoords) ltrsqr) 
-                where aCoords = letterToCoords a ltrsqr
-                      bCoords = letterToCoords b ltrsqr
+encodeDigraph :: LetterSquare -> (Char, Char) -> (Char, Char)
+encodeDigraph ltrsqr (a, b) = (coordsToLetter ltrsqr (aCoords +$ bCoords), coordsToLetter ltrsqr (aCoords -$ bCoords)) 
+                where aCoords = letterToCoords ltrsqr a
+                      bCoords = letterToCoords ltrsqr b
 
 -- decode a digraph X and Y as 3*(X+Y) and 3*(X-Y)
 -- (this works because of group theory magic)
-decodeDigraph :: (Char, Char) -> LetterSquare -> (Char, Char)
-decodeDigraph (x, y) ltrsqr = (coordsToLetter ((Coords 3 3) *$ (xCoords +$ yCoords)) ltrsqr, coordsToLetter ((Coords 3 3) *$ (xCoords -$ yCoords)) ltrsqr)
-                where xCoords = letterToCoords x ltrsqr
-                      yCoords = letterToCoords y ltrsqr
+decodeDigraph :: LetterSquare -> (Char, Char) -> (Char, Char)
+decodeDigraph ltrsqr (x, y) = (coordsToLetter ltrsqr ((Coords 3 3) *$ (xCoords +$ yCoords)), coordsToLetter ltrsqr ((Coords 3 3) *$ (xCoords -$ yCoords)))
+                where xCoords = letterToCoords ltrsqr x
+                      yCoords = letterToCoords ltrsqr y
 
 -- silly silly silly
 listToTuple [a,b] = (a,b)
@@ -65,16 +65,16 @@ tupleToList (a,b) = [a,b]
 
 -- encodes a single word (as in no spaces), adding
 -- an X at the end if it has an odd number of letters
-encodeString :: String -> LetterSquare -> String
-encodeString str ltrsqr = concat $ map (tupleToList . (\x -> encodeDigraph x ltrsqr) . listToTuple) digraphList 
+encodeString :: LetterSquare -> String -> String
+encodeString ltrsqr str = concat $ map (tupleToList . (\x -> encodeDigraph ltrsqr x) . listToTuple) digraphList 
                                -- add an "X" at the end if string has an odd number of letters 
                          where realStr = if (((`mod` 2) . length) str /= 0) then str ++ "X" else str
                                digraphList = chunksOf 2 realStr
 
 -- decodes a single word (no spaces), almost the 
 -- opposite of encodeString 
-decodeString :: String -> LetterSquare -> String
-decodeString str ltrsqr = concat $ map (tupleToList . (\x -> decodeDigraph x ltrsqr) . listToTuple) digraphList
+decodeString :: LetterSquare -> String ->  String
+decodeString ltrsqr str = concat $ map (tupleToList . (\x -> decodeDigraph ltrsqr x) . listToTuple) digraphList
                           where digraphList = chunksOf 2 str
 
 -- make uppercase, turn J into I, remove characters
@@ -84,16 +84,16 @@ cleanString str = map ((\x -> if x == 'J' then 'I' else x) . toUpper) $ filter (
 
 -- encodes a string WITH spaces (note that this is done per-word,
 -- so there will be encoded Xs after every odd-lengthed word) 
-encode :: String -> LetterSquare -> String
-encode str ltrsqr = (unwords . map (\x -> encodeString x ltrsqr) . words) realStr
+encode :: LetterSquare -> String -> String
+encode ltrsqr str = (unwords . map (\x -> encodeString ltrsqr x) . words) realStr
                     where realStr = cleanString str
 
 -- decodes a sentence with spaces
-decode :: String -> LetterSquare -> String
-decode str ltrsqr = (unwords . map (\x -> decodeString x ltrsqr) . words) str
+decode :: LetterSquare -> String -> String
+decode ltrsqr str = (unwords . map (\x -> decodeString ltrsqr x) . words) str
 
 -- encodes a string, discarding spaces for X-conomical reasons
-encodeNoSpaces :: String -> LetterSquare -> String
-encodeNoSpaces str ltrsqr = encodeString realStr ltrsqr
+encodeNoSpaces :: LetterSquare -> String -> String
+encodeNoSpaces ltrsqr str = encodeString ltrsqr realStr
                             -- filter out spaces and clean string 
                             where realStr = filter (not . isSpace) $ cleanString str 
